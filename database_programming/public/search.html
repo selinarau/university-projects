@@ -1,0 +1,375 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+        }
+        table {
+            width: 90%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer; 
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        } 
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #d3d3d3; 
+            color: #808080; 
+            cursor: not-allowed;
+        }
+        input[type="text"], select {
+            width: 50%; 
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div style="display: flex; gap: 10px; justify-content: left; margin-bottom: 30px">
+        <p>Rooli: Asiakas</p>
+        <button style="margin-left: 40px" onclick=changeRole()>Vaihda Rooli</button>
+        <button style="margin-left:auto" onclick="window.location.href='shoppingCart.html'">Tarkastele ostoskoria ( <span id="cartCounter">0</span> )</button>
+    </div>
+    <div style="display: flex; gap: 20px;">
+        <div style="flex: 2;">
+            <form id="searchForm" style="flex-direction: column; gap: 15px; max-width:550px; padding: 20px; border-radius:10px; background-color: #FFFFFF;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label for="teos_nimi" style="width: 150px;">Teoksen nimi:</label>
+                    <input type="text" id="teos_nimi" name="teos_nimi" style="flex: 1;">
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label for="tekija_nimi" style="width: 150px;">Tekijän nimi:</label>
+                    <input type="text" id="tekija_nimi" name="tekija_nimi" style="flex: 1;">
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label for="tyyppi" style="width: 150px;">Tyyppi:</label>
+                    <select id="tyyppi" name="tyyppi" style="flex: 1;">
+                        <option value="">Valitse tyyppi</option>
+                        <option value="history">Historia</option>
+                        <option value="detective">Dekkari</option>
+                        <option value="humor">Huumori</option>
+                        <option value="guide">Opas</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label for="luokka" style="width: 150px;">Luokka:</label>
+                    <select id="luokka" name="luokka" style="flex: 1;">
+                        <option value="">Valitse luokka</option>
+                        <option value="comic">Komiikka</option>
+                        <option value="non-fiction">Tietokirjallisuus</option>
+                        <option value="muu">Muu</option>
+                    </select>
+                </div>
+
+                <button type="submit" style="align-self: flex-start;">Hae</button>
+            </form>
+
+            <h3 style="margin-top:30px;" >Raportit1 ja 4 Hakutulokset ja relevanssijärjestys</h3>
+            <table id="teosTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)">ISBN</th>
+                        <th onclick="sortTable(1)">Nimi</th>
+                        <th onclick="sortTable(2)">Tekijä</th>
+                        <th onclick="sortTable(3)">Julkaisuvuosi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data will be inserted here dynamically -->
+                </tbody>
+            </table>
+        </div>
+
+    <div style="flex: 1;">
+        <div id="bookCopiesContainer" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3>Teoskappaleet</h3>
+                <button onclick="closeBookCopies()" style="background: none; border: none; color: #007bff; font-size: 16px; cursor: pointer;">X</button>
+            </div>
+            <table id="bookCopiesTable" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th>Teoskappale ID</th>
+                        <th>Kauppa</th>
+                        <th>Status</th>
+                        <th>Sisäänostohinta</th>
+                        <th>Myyntihinta</th>
+			<th>Lisää</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Book copies will be dynamically inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        fetchBooks(); 
+
+        document.getElementById("searchForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+            fetchFilteredBooks();
+        });
+
+        updateCartCounter();
+    });
+
+    let sortDirection = {};
+
+    function sortTable(columnIndex) {
+        const table = document.getElementById("teosTable");
+        const tbody = table.querySelector("tbody");
+        const rows = Array.from(tbody.querySelectorAll("tr"));
+
+        if (sortDirection[columnIndex] === "asc") {
+            sortDirection[columnIndex] = "desc";
+        } else {
+            sortDirection[columnIndex] = "asc";
+        }
+
+        rows.sort((rowA, rowB) => {
+            const cellA = rowA.cells[columnIndex].innerText.trim();
+            const cellB = rowB.cells[columnIndex].innerText.trim();
+
+            const isNumeric = !isNaN(cellA) && !isNaN(cellB);
+            if (isNumeric) {
+                return sortDirection[columnIndex] === "asc" 
+                    ? cellA - cellB 
+                    : cellB - cellA;
+            }
+
+            return sortDirection[columnIndex] === "asc" 
+                ? cellA.localeCompare(cellB, 'fi', { numeric: true }) 
+                : cellB.localeCompare(cellA, 'fi', { numeric: true });
+        });
+
+        tbody.innerHTML = "";
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    function updateCartCounter() {
+        const cartCount = JSON.parse(localStorage.getItem("cart")) || 0;
+        const counter = document.getElementById("cartCounter");
+        counter.textContent = cartCount;
+    }
+
+    function changeRole() {
+        localStorage.removeItem("customer_id"); //remove sensitive data before moving to another page
+        window.location.href = 'index.html';
+    }
+
+    function fetchBooks() {
+        fetch('api/books')
+            .then(response => response.json())
+            .then(data => populateTable(data))
+            .catch(error => console.error("Error fetching books:", error));
+    }
+
+    function fetchFilteredBooks() {
+        const title = document.getElementById("teos_nimi").value;
+        const author = document.getElementById("tekija_nimi").value;
+        const type = document.getElementById("tyyppi").value;
+        const category = document.getElementById("luokka").value;
+
+        const queryParams = new URLSearchParams({ title, author, type, category }).toString();
+
+        fetch(`api/books/filtered?${queryParams}`)
+            .then(response => response.json())
+            .then(data => populateTable(data))
+            .catch(error => console.error("Error fetching filtered books:", error));
+    }
+
+    function populateTable(data) {
+        const tableBody = document.querySelector("#teosTable tbody");
+        tableBody.innerHTML = "";
+
+        if (Array.isArray(data)) {
+            data.forEach(book => {
+                const row = document.createElement("tr");
+            	row.setAttribute("data-book-id", book.book_id)
+		
+		const isbn = book.isbn === String(book.publication_year)
+			   ? "-"
+			   : book.isbn; 
+
+                row.innerHTML = `
+                    <td>${isbn}</td>
+                    <td>${book.title}</td>
+                    <td>${book.author}</td>
+                    <td>${book.publication_year}</td>
+                `;
+            row.addEventListener("click", () => toggleBookCopies(row));
+                tableBody.appendChild(row);
+            });
+        } else {
+            const row = document.createElement("tr");
+            row.innerHTML = `<td colspan="4">No books found</td>`;
+            tableBody.appendChild(row);
+        }
+    }
+
+    function toggleBookCopies(row) {
+        const bookId = row.getAttribute("data-book-id");
+
+        fetch(`api/bookcopies?book_id=${bookId}`)
+            .then(response => response.json())
+            .then(data => {
+                const bookCopiesContainer = document.getElementById("bookCopiesContainer");
+                const bookCopiesTable = document.getElementById("bookCopiesTable");
+                const tableBody = bookCopiesTable.querySelector("tbody");
+
+                tableBody.innerHTML = ""; 
+
+                const noCopies = data.every(copy => copy.copy_id === null);
+
+                if (noCopies) {
+                    tableBody.innerHTML = `<tr><td colspan="5">No book copies found</td></tr>`;
+                } else {
+                    data.forEach(copy => {
+                        const statusText = copy.status === 0
+                            ? "vapaa"
+                            : copy.status === 1
+                            ? "varattu"
+                            : copy.status === 2
+                            ? "ostettu"
+                            : "N/A";
+
+                        const storeText = copy.store_id === 1
+                            ? "Keskusdivari"
+                            : copy.store_id === 2
+                            ? "Divari"
+                            : "N/A";
+
+                        const isDisabled = copy.status !== 0 ? "disabled" : ""; 
+			            const customer_id = localStorage.getItem("customer_id");
+
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${copy.copy_id || "N/A"}</td>
+                            <td>${storeText}</td>
+                            <td>${statusText}</td>
+                            <td>${copy.purchase_price || "N/A"}</td>
+                            <td>${copy.selling_price || "N/A"}</td>
+                            <td>
+                                <button class="add-button" onclick="addToOrder(this, ${customer_id}, ${copy.copy_id}, null)" ${isDisabled}>+</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                }
+
+                bookCopiesContainer.style.display = "block"; 
+            })
+            .catch(error => console.error("Error fetching book copies:", error));
+    }
+
+    function addToOrder(button, customerId = null, copy_id, order_id = null) {
+        if (!customerId) {
+            alert("Customer ID not provided. Log in first!");
+            return;
+        }
+
+        const cartCount = parseInt(localStorage.getItem("cart")) || 0;
+        localStorage.setItem("cart", cartCount + 1);
+
+        updateCartCounter();
+
+        // update add button and status field before adding
+        button.disabled = true;
+        const row = button.closest("tr");
+        const statusCell = row.querySelector("td:nth-child(3)"); 
+        if (statusCell) {
+            statusCell.textContent = "varattu"; 
+        }
+
+        if (!order_id) {
+            fetch(`/api/orders/getOrderId?customer_id=${customerId}`, {
+                method: "GET"
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(order_id => {
+                    addBookCopyToOrder(button, order_id, copy_id);
+                })
+                .catch(error => {
+                    console.error("Error creating order:", error);
+                    button.disabled = false;
+                });
+        } else {
+            addBookCopyToOrder(button, order_id, copy_id);
+        }
+    }
+
+    function addBookCopyToOrder(button, order_id, copy_id) {
+        fetch(`/api/orders/addToOrder`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ "order_id": order_id, "copy_id": copy_id }),
+        })
+            .then(response => {
+                if (response.ok) {
+                    console.log(`Book copy ${copy_id} added to order ${order_id}`);
+                } else {
+                    console.error(`Failed to add book copy ${copy_id} to order ${order_id}`);
+                     button.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error("Error adding book copy to order:", error);
+                button.disabled = false;
+            });
+    }   
+
+    function closeBookCopies() {
+        const bookCopiesContainer = document.getElementById("bookCopiesContainer");
+        bookCopiesContainer.style.display = "none"; 
+    }
+
+</script>
+</body>
+</html>

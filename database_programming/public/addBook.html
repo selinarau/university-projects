@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Book</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+	        background-color: #f4f4f4;
+	        padding: 20px;
+        }
+        label {
+            width: 150px;
+            font-weight: bold;
+        }
+        .form-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            height: 40px; 
+            width: 120px; 
+            text-align: left;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #d3d3d3; 
+            color: #808080; 
+            cursor: not-allowed;
+        }
+        input, select { 
+            padding: 8px;
+            width: 50%;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+<div style="display: flex; gap: 10px; justify-content: left; margin-bottom: 30px">
+    <p id="role">Rooli: </p>
+    <button style="margin-left: 40px" onclick="window.location.href='divari.html'">Paluu</button>
+</div>
+    <form id="addBookForm" style = "background-color: #FFFFFF; padding: 20px; border-radius:10px;">
+        <p>Teos puuttuu tietokannasta, täytä teostiedot</p>
+
+        <div class="form-group">
+            <label for="teos_nimi">Teoksen nimi: </label>
+            <input type="text" id="teos_nimi" name="teos_nimi" required>
+        </div>
+
+        <div class="form-group">
+            <label for="teos_vuosi">Julkaisuvuosi: </label>
+            <input type="number" id="teos_vuosi" name="teos_vuosi" required>
+        </div>
+
+        <div class="form-group">
+            <label for="tekija_nimi">Tekijän nimi: </label>
+            <input type="text" id="tekija_nimi" name="tekija_nimi" required>
+        </div>
+
+        <div class="form-group">
+            <label for="tyyppi">Tyyppi: </label>
+            <select id="tyyppi" name="tyyppi" required>
+                <option value="history">Historia</option>
+                <option value="detective">Dekkari</option>
+                <option value="humor">Huumori</option>
+                <option value="guide">Opas</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="luokka">Luokka: </label>
+            <select id="luokka" name="luokka" required>
+                <option value="novel">Romaani</option>
+                <option value="comic">Komiikka</option>
+                <option value="non-fiction">Tietokirjallisuus</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="paino">Paino (g): </label>
+            <input type="number" id="paino" name="paino" required>
+        </div>
+
+        <button type="submit">Jatka</button>
+    </form>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const store_id = urlParams.get('store_id');
+
+        const roleElement = document.getElementById("role");
+        if (store_id === "1") {
+            roleElement.textContent = "Rooli: Keskusdivari";
+        } else if (store_id === "2") {
+            roleElement.textContent = "Rooli: Divari";
+        } else {
+            roleElement.textContent = "Rooli: Tuntematon"; 
+        }
+
+        document.getElementById("addBookForm").addEventListener("submit", function (event) {
+            event.preventDefault();  
+
+            const teos_nimi = document.getElementById("teos_nimi").value;
+            const teos_vuosi = document.getElementById("teos_vuosi").value;
+            const tekija_nimi = document.getElementById("tekija_nimi").value;
+            const tyyppi = document.getElementById("tyyppi").value;
+            const luokka = document.getElementById("luokka").value;
+            const paino = document.getElementById("paino").value*0.001; //transform the value from g to kg
+
+            const isbn = urlParams.get('isbn');
+
+            localStorage.setItem('bookData', JSON.stringify({
+                isbn: isbn,
+                nimi: teos_nimi,
+                tekija: tekija_nimi,
+                julkaisuvuosi: teos_vuosi,
+                tyyppi: tyyppi,
+                luokka: luokka,
+                paino: paino
+            }));
+
+            window.location.href = `addBookCopy.html?book_id=undefined&store_id=${store_id}&bookToBeAdded=true`;            
+        });
+    </script>
+</body>
+</html>

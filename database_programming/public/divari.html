@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Divari</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        padding: 20px;
+        background-color: #f4f4f4;
+    }
+    h1 {
+        text-align: center;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        background: white;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+    th {
+        background-color: #007bff;
+        color: white;
+        cursor: pointer; 
+    }
+    button {
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+	    height: 40px; 
+        width: 120px; 
+	    text-align: left;
+    }
+    button:hover {
+        background-color: #0056b3;
+    }
+    button:disabled {
+        background-color: #d3d3d3; 
+        color: #808080; 
+        cursor: not-allowed;
+    }
+    input[type="text"], select {
+        padding: 8px;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-sizing: border-box;
+    }
+
+</style>
+</head>
+<body>
+    <div style="display: flex; gap: 10px; justify-content: left; margin-bottom: 30px">
+        <p>Rooli: Divari</p>
+        <button style="margin-left: 40px" onclick="window.location.href='index.html'">Vaihda Rooli</button>
+    </div>
+    <div style = "background-color: #FFFFFF; padding: 10px; border-radius:10px;">
+        <form style = "margin-bottom: 30px" id="addForm">
+        <h3>Lisää teos myyntiin, anna ISBN-tunnus</h3>
+            <label for="isbn">ISBN: </label>
+            <input style="margin-left:10px;" type="text" id="isbn" name="isbn" oninput="validateISBN()">
+            <button id="submitButton" style="margin-left: 40px" type="submit" disabled>Lisää teos</button>
+            <p>Annetun ISBN-tunnuksen tulee olla 13 numeroa pitkä</p>
+        </form>
+    </div>
+        <h3 style = "margin-top: 40px" >Tuota raportti R2: Teosten kokonaismyyntihinta ja keskihinta luokan mukaan</h3>
+        <button onClick="toggleR2Table()">Tuota R2</button>
+        <table id="R2Table" style="display:none;">
+            <thead>
+                <tr>
+                    <th onclick="sortTable(0)">Luokka</th>
+                    <th onclick="sortTable(1)">Lkm</th>
+                    <th onclick="sortTable(2)">Kokonaismyyntihinta</th>
+                    <th onclick="sortTable(3)">Keskihinta</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be inserted here dynamically -->
+            </tbody>
+        </table>
+
+        <form id=xmlUploadForm action="/api/upload-xml" method="POST" enctype="multipart/form-data">
+            <input type="file" id="xmlFile" name="file" accept=".xml" required />
+            <input type="submit" value="Upload XML" />
+        </form>
+        <p id="xmlUploadStatus"></p>
+          
+<script>
+
+    // update the status message
+    document.addEventListener("DOMContentLoaded", function () {
+        const message = localStorage.getItem('message');
+        const details = localStorage.getItem('details');
+
+        if (message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.style.padding = '10px';
+            messageDiv.style.marginBottom = '20px';
+            messageDiv.style.border = '1px solid';
+            messageDiv.style.borderRadius = '5px';
+
+            if (message === 'success') {
+                messageDiv.style.backgroundColor = '#d4edda';
+                messageDiv.style.color = '#155724';
+                messageDiv.style.borderColor = '#c3e6cb';
+            } else if (message === 'failure') {
+                messageDiv.style.backgroundColor = '#f8d7da';
+                messageDiv.style.color = '#721c24';
+                messageDiv.style.borderColor = '#f5c6cb';
+            }
+
+            messageDiv.textContent = details || (message === 'success' ? 'Operation successful!' : 'Operation failed.');
+            document.body.insertBefore(messageDiv, document.body.firstChild);
+
+            localStorage.removeItem('message');
+            localStorage.removeItem('details');
+        }
+    });
+
+    // Fetch R2 data and upload table for it
+    let isDataLoaded = false;
+    async function toggleR2Table() {
+        const table = document.getElementById("R2Table");
+        if (table.style.display === "none") {
+            table.style.display = "table";
+            if (!isDataLoaded) {
+                try {
+                    const response = await fetch('/api/books/export-r2');
+                    const data = await response.json();
+
+                    const tbody = document.querySelector("#R2Table tbody");
+                    if (!tbody) {
+                        console.error("Table body not found!");
+                        return;
+                    }
+
+                    tbody.innerHTML = ""; // Clear previous rows
+
+                    data.forEach(row => {
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <td>${row.luokka}</td>
+                            <td>${row.lkm}</td>
+                            <td>${row.kokonaismyyntihinta}</td>
+                            <td>${row.keskihinta}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+
+                    isDataLoaded = true; // Mark data as loaded to prevent re-fetching
+                } catch (error) {
+                    console.error("Error fetching R2 data:", error);
+                }
+            }
+        } else {
+            table.style.display = "none";
+        }
+    };
+
+    // Prevent leaving ht epage after uploading xml file, show status message
+    document.getElementById("xmlUploadForm").addEventListener("submit", async function(event) {
+        event.preventDefault(); // Prevent the default form submission
+        const formData = new FormData(this); // Get the form data (including the file)
+        try {
+            const response = await fetch("/api/upload-xml", {
+                method: "POST",
+                body: formData
+            });
+            if (response.ok) {
+                const statusMessage = document.getElementById("xmlUploadStatus");
+                statusMessage.textContent = "Tiedosto käsitelty onnistuneesti, teokset lisätty tietokantaan.";
+            } else {
+                statusMessage.textContent = "Virhe tiedoston käsittelyssä.";
+            }
+        } catch (error) {
+            statusMessage.textContent = "Virhe tiedoston lataamisessa.";
+            console.error(error);
+        }
+    });
+
+    function validateISBN() {
+        const isbnInput = document.getElementById("isbn");
+        const submitButton = document.getElementById("submitButton");
+
+        const isbnRegex = /^\d{13}$/;
+        if (isbnRegex.test(isbnInput.value)) {
+            submitButton.disabled = false; 
+        } else {
+            submitButton.disabled = true; 
+        }
+    }
+
+    //try adding a book with ISBN
+    document.getElementById("addForm").addEventListener("submit", function (event) {
+        event.preventDefault();
+        const isbn = document.getElementById("isbn").value;
+
+        fetch(`/api/books/getBookWithISBN?isbn=${isbn}`)
+            .then(response => {
+                    if (response.status === 404) {
+                        // Book with given ISBN was not found
+                        window.location.href = `addBook.html?isbn=${isbn}&store_id=2`; // divari has id 2
+                    } else if (response.ok) {
+                        // Book with given ISBN was found 
+                        response.json().then(data => {
+                            const book_id = data.book_id;
+                            window.location.href = `addBookCopy.html?book_id=${book_id}&store_id=2&bookToBeAdded=false`;
+                        });
+                    } else {
+                        throw new Error("Unexpected response from server");
+                    }
+            })
+            .catch(error => console.error("Error while looking for ISBN:", error));
+        });
+
+    </script>
+</body>
+</html>
