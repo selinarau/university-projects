@@ -1,0 +1,9 @@
+CREATE TABLE users (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    email TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    username TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX ON users (lower(trim(email)));
