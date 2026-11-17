@@ -8,7 +8,7 @@ This repository is for my university projects and exercises. Some of them are in
 Projects are written in different programming languages, there are exercises in python, java, javascript, C, SQL, PHP and so on. 
 
 Shortly about the projects:
-* I started online course **Scalable Web Application** of Aalto University, but due to a lack of time I could not follow the course till the end. Anyway I decided to continue the course project on my own.
+* I started online course **Scalable Web Application** of Aalto University, but due to a lack of time I could not follow the course till the end. Anyway I decided to continue the course project of a community forum on my own.
 * **Algorithms and Data Structures** contains exercises of different algorithms of sorting, text correction and graphs and queues. 
 * **Database Fundamentals** shows basic understanding of relations and SQL. 
 * **Database Programming** includes a project of a bookshop and it focuses more how databases can be accessed and used.
